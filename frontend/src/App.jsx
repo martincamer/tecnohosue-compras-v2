@@ -16,16 +16,9 @@ import Productos from "./pages/Productos";
 import Proveedores from "./pages/Proveedores";
 import DetalleProveedor from "./pages/DetalleProveedor";
 import NotFound from "./pages/NotFound";
-import Bancos from "./pages/Bancos";
-import Cajas from "./pages/Cajas";
-import Clientes from "./pages/Clientes";
-import Cliente from "./pages/Cliente";
 import Perfil from "./pages/Perfil";
-import Casas from "./pages/Casas";
 import Permisos from "./pages/Permisos";
 import AccesoDenegado from "./pages/AccesoDenegado";
-import AllCajas from "./pages/AllCajas";
-import CajaUnica from "./pages/CajaUnica";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { CategoriasProvider } from "./context/CategoriasContext";
 
@@ -111,98 +104,16 @@ function App() {
                               element={<DetalleProveedor />}
                             />
                           </Route>
-                          <Route element={<RutaProtegida />}>
-                            <Route
-                              path="transacciones/bancos"
-                              element={
-                                auth?.user?.permisos?.bancos?.acceso ? (
-                                  <Bancos />
-                                ) : (
-                                  <AccesoDenegado />
-                                )
-                              }
-                            />
-                          </Route>
 
                           <Route element={<RutaProtegida />}>
-                            <Route
-                              path="transacciones/cajas"
-                              element={
-                                auth?.user?.permisos?.cajas?.acceso ? (
-                                  <Cajas />
-                                ) : (
-                                  <AccesoDenegado />
-                                )
-                              }
-                            />
-                          </Route>
-                          <Route element={<RutaProtegida />}>
-                            <Route
-                              element={
-                                auth?.user?.permisos?.cajas?.ver ? (
-                                  <AllCajas />
-                                ) : (
-                                  <AccesoDenegado />
-                                )
-                              }
-                              path="transacciones/all-cajas"
-                              // element={<AllCajas />}
-                            />
-                          </Route>
-                          <Route element={<RutaProtegida />}>
-                            <Route
-                              path="transacciones/caja/:id"
-                              element={<CajaUnica />}
-                            />
-                          </Route>
-                          <Route element={<RutaProtegida />}>
-                            <Route
-                              path="ventas/clientes"
-                              element={
-                                auth?.user?.permisos?.ventas?.acceso ? (
-                                  <Clientes />
-                                ) : (
-                                  <AccesoDenegado />
-                                )
-                              }
-                            />
-                          </Route>
-                          <Route element={<RutaProtegida />}>
-                            <Route
-                              path="ventas/clientes/:id"
-                              element={<Cliente />}
-                            />
-                          </Route>
-                          <Route element={<RutaProtegida />}>
-                            <Route
-                              path="profile"
-                              element={
-                                auth?.user?.permisos?.configuracion?.acceso ? (
-                                  <Perfil />
-                                ) : (
-                                  <AccesoDenegado />
-                                )
-                              }
-                            />
+                            <Route path="profile" element={<Perfil />} />
                           </Route>
                           <Route element={<RutaProtegida />}>
                             <Route
                               path="configuracion/permisos"
                               element={
-                                auth?.user?.rol === "ADMIN" ? (
+                                auth?.user?.rol === "SUPER_ADMIN" ? (
                                   <Permisos />
-                                ) : (
-                                  <AccesoDenegado />
-                                )
-                              }
-                            />
-                          </Route>
-                          <Route element={<RutaProtegida />}>
-                            <Route
-                              path="ventas/casas"
-                              element={
-                                auth?.user?.permisos?.ventas?.acceso ? (
-                                  <Casas />
                                 ) : (
                                   <AccesoDenegado />
                                 )

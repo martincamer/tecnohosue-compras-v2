@@ -38,12 +38,13 @@ export const ProductosProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       const { data } = await clienteAxios.get(`/products/${id}`, getConfig());
-      setProducto(data.data);
+      return data.producto;
     } catch (error) {
       const errorMessage =
         error.response?.data.message || "Error al obtener el producto";
       setError(errorMessage);
       toast.error(errorMessage);
+      return null;
     } finally {
       setLoading(false);
       toast.dismiss(loadingToast);
@@ -63,11 +64,12 @@ export const ProductosProvider = ({ children }) => {
       );
 
       if (data.ok) {
-        const productosActuales = Array.isArray(productos) ? productos : [];
-
-        if (data) {
-          setProductos([...productosActuales, data]);
-        }
+        setProductos(data.productos);
+        toast.success("Producto creado exitosamente");
+        return {
+          success: true,
+          message: "Producto creado exitosamente",
+        };
       }
 
       throw new Error(data.message || "Error al crear el producto");
@@ -107,24 +109,37 @@ export const ProductosProvider = ({ children }) => {
   const updateProducto = async (id, productoData) => {
     const loadingToast = toast.loading("Actualizando producto...");
     try {
-      setLoading(true);
-      setError(null);
       const { data } = await clienteAxios.put(
         `/products/${id}`,
         productoData,
         getConfig()
       );
-      setProductos(productos.map((p) => (p._id === id ? data.product : p)));
-      toast.success("Producto actualizado exitosamente");
-      return { success: true, message: data.message };
+
+      if (data.ok) {
+        // Actualizar el estado local
+        setProductos(data.productos);
+
+        toast.success("Producto actualizado exitosamente");
+        return { success: true, message: "Producto actualizado exitosamente" };
+      }
+
+      throw new Error(data.message || "Error al actualizar el producto");
     } catch (error) {
+      console.error("Error completo:", error);
+
       const errorMessage =
-        error.response?.data.message || "Error al actualizar el producto";
-      setError(errorMessage);
+        error.response?.data?.message ||
+        error.message ||
+        "Error al actualizar el producto";
+
       toast.error(errorMessage);
-      return { success: false, message: errorMessage };
+
+      return {
+        success: false,
+        message: errorMessage,
+        error: error.response?.data?.error || error.message,
+      };
     } finally {
-      setLoading(false);
       toast.dismiss(loadingToast);
     }
   };
@@ -136,23 +151,22 @@ export const ProductosProvider = ({ children }) => {
       setLoading(true);
       setError(null);
 
-      // Llamar al endpoint de actualización
-      const { data } = await clienteAxios.put(
+      // Llamar al endpoint de eliminación
+      const { data } = await clienteAxios.delete(
         `/products/${id}`,
-        { isActive: false },
         getConfig()
       );
 
-      // Actualizar el estado local
-      setProductos(
-        productos.map((p) => (p._id === id ? { ...p, isActive: false } : p))
-      );
+      if (data.ok) {
+        // Actualizar el estado local
+        setProductos(data.productos);
 
-      toast.success("Producto desactivado exitosamente");
-      return { success: true, message: data.message };
+        toast.success("Producto desactivado exitosamente");
+        return { success: true, message: data.message };
+      }
     } catch (error) {
       const errorMessage =
-        error.response?.data.message || "Error al desactivar el producto";
+        error.response?.data?.message || "Error al desactivar el producto";
       setError(errorMessage);
       toast.error(errorMessage);
       return { success: false, message: errorMessage };

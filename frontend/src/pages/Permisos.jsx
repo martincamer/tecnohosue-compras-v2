@@ -1,26 +1,25 @@
-import { useAuth } from "../context/AuthContext";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Check, X, Save, Search } from "lucide-react";
+import { Shield, Check, X, Save, Search, Circle, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import clienteAxios from "../config/axios";
+import ModalUsuario from "../components/usuarios/ModalUsuario";
 
 const Permisos = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showModalUsuario, setShowModalUsuario] = useState(false);
 
   const modules = [
     { id: "compras", label: "Compras" },
+    { id: "ordenesCompra", label: "Órdenes de Compra" },
+    { id: "facturas", label: "Facturas" },
+    { id: "pagos", label: "Pagos" },
     { id: "productos", label: "Productos" },
-    { id: "ventas", label: "Ventas" },
-    { id: "clientes", label: "Clientes" },
     { id: "proveedores", label: "Proveedores" },
-    { id: "usuarios", label: "Usuarios" },
-    { id: "bancos", label: "Bancos" },
-    { id: "cajas", label: "Cajas" },
-    { id: "configuracion", label: "Configuración" },
+    { id: "reportes", label: "Reportes" },
   ];
 
   const actions = [
@@ -64,20 +63,26 @@ const Permisos = () => {
 
   const handleSavePermissions = async () => {
     try {
-      console.log("Datos a enviar:", {
-        permisos: selectedUser.permisos,
-        rol: selectedUser.rol,
-      });
-      await clienteAxios.put(`/users/permissions/${selectedUser._id}`, {
-        permisos: selectedUser.permisos,
-        rol: selectedUser.rol,
-      });
-      toast.success("Permisos actualizados correctamente");
-      fetchUsers();
-      setSelectedUser(null);
+      const response = await clienteAxios.put(
+        `/users/permissions/${selectedUser._id}`,
+        {
+          permisos: selectedUser.permisos,
+          rol: selectedUser.rol,
+        }
+      );
+
+      if (response.data.ok) {
+        toast.success("Permisos actualizados correctamente");
+        fetchUsers();
+        setSelectedUser(null);
+      } else {
+        toast.error(response.data.message || "Error al actualizar permisos");
+      }
     } catch (error) {
       console.error("Error al actualizar permisos:", error);
-      toast.error("Error al actualizar permisos");
+      toast.error(
+        error.response?.data?.message || "Error al actualizar permisos"
+      );
     }
   };
 
@@ -139,6 +144,17 @@ const Permisos = () => {
             <span className="text-sm text-gray-500">Roles activos: 3</span>
           </motion.div>
         </div>
+
+        {/* Botón Nuevo Usuario */}
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setShowModalUsuario(true)}
+          className="mt-6 flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200"
+        >
+          <Plus size={18} />
+          Nuevo Usuario
+        </motion.button>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-6">
@@ -191,12 +207,31 @@ const Permisos = () => {
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <div className="font-medium text-gray-900">
+                        <div className="font-medium text-gray-900 flex items-center gap-2">
                           {user.username}
+                          <Circle
+                            size={8}
+                            fill={user.enLinea ? "#22c55e" : "#ef4444"}
+                            className={`${
+                              user.enLinea ? "text-green-500" : "text-red-500"
+                            }`}
+                          />
                         </div>
                         <div className="text-sm text-gray-500">
                           {user.email}
                         </div>
+                        {user.ultimaConexion && (
+                          <div className="text-xs text-gray-400">
+                            Última conexión:{" "}
+                            {new Date(user.ultimaConexion).toLocaleString(
+                              "es-ES",
+                              {
+                                dateStyle: "short",
+                                timeStyle: "short",
+                              }
+                            )}
+                          </div>
+                        )}
                       </div>
                       <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
                         {user.rol}
@@ -234,9 +269,11 @@ const Permisos = () => {
                   }
                   className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 >
-                  <option value="USER">Usuario</option>
-                  <option value="ADMIN">Administrador</option>
-                  <option value="VENDEDOR">Vendedor</option>
+                  <option value="USUARIO">Usuario</option>
+                  <option value="SUPER_ADMIN">Super Admin</option>
+                  <option value="ADMIN_FABRICA">Admin Fábrica</option>
+                  <option value="COMPRADOR">Comprador</option>
+                  <option value="APROBADOR">Aprobador</option>
                 </select>
               </div>
 
@@ -320,6 +357,12 @@ const Permisos = () => {
           )}
         </AnimatePresence>
       </div>
+
+      <ModalUsuario
+        isOpen={showModalUsuario}
+        onClose={() => setShowModalUsuario(false)}
+        onUserCreated={fetchUsers}
+      />
     </motion.div>
   );
 };

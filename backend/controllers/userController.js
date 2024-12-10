@@ -300,94 +300,6 @@ const registerWithGoogle = async (req, res) => {
   }
 };
 
-// const registerWithGoogle = async (req, res) => {
-//   try {
-//     const { email, given_name, family_name, sub } = req.body;
-
-//     // Verifica si el usuario ya existe
-//     let user = await User.findOne({ email });
-
-//     if (user) {
-//       // Verificar si tiene caja y banco
-//       const { cash, bank } = await initializeUserAccounts(user._id);
-
-//       const token = generateToken(user._id);
-//       return res.json({
-//         _id: user._id,
-//         username: user.username,
-//         nombre: user.nombre,
-//         apellido: user.apellido,
-//         email: user.email,
-//         token,
-//       });
-//     }
-
-//     // Si no existe, créalo
-//     user = await User.create({
-//       username: email.split("@")[0],
-//       nombre: given_name,
-//       apellido: family_name,
-//       email,
-//       password: sub,
-//       googleId: sub,
-//       verificado: true,
-//     });
-
-//     // Inicializar caja y banco
-//     const cash = new Cash({
-//       user: user._id,
-//       balance: 0,
-//       transactions: [],
-//     });
-
-//     const bank = new Bank({
-//       user: user._id,
-//       accountNumber: `${Date.now()}`,
-//       bankName: "Banco Principal",
-//       accountType: "CORRIENTE",
-//       balance: 0,
-//       transactions: [],
-//     });
-
-//     // Guardar caja y banco
-//     await Promise.all([cash.save(), bank.save()]);
-
-//     const token = generateToken(user._id);
-
-//     res.json({
-//       _id: user._id,
-//       username: user.username,
-//       nombre: user.nombre,
-//       apellido: user.apellido,
-//       email: user.email,
-//       token,
-//     });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({
-//       message: "Error en el servidor",
-//     });
-//   }
-// };
-
-// Nuevo método para verificar/crear caja y banco
-const initializeAccounts = async (req, res) => {
-  try {
-    const { cash, bank } = await initializeUserAccounts(req.user._id);
-
-    res.json({
-      message: "Cuentas inicializadas correctamente",
-      cash,
-      bank,
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "Error al inicializar las cuentas",
-    });
-  }
-};
-
 // Obtener permisos de un usuario
 const getUserPermissions = async (req, res) => {
   try {
@@ -566,27 +478,73 @@ const updateUserPermissions = async (req, res) => {
 // Obtener todos los usuarios con sus permisos
 const getAllUsersPermissions = async (req, res) => {
   try {
-    // Verificar que el usuario que hace la petición sea ADMIN
-    if (req.user.rol !== "ADMIN") {
+    if (!["SUPER_ADMIN", "ADMIN_FABRICA"].includes(req.user.rol)) {
       return res.status(403).json({
         ok: false,
         message: "No tienes permisos para ver esta información",
       });
     }
 
-    const users = await User.find()
-      .select("username email rol permisos sucursal")
-      .populate("sucursal", "nombre");
+    let query = {};
+    if (req.user.rol === "ADMIN_FABRICA") {
+      query.fabrica = req.user.fabrica;
+    }
+
+    const users = await User.find(query)
+      .select(
+        "username email rol permisos fabrica nombre apellido enLinea ultimaConexion"
+      )
+      .populate("fabrica", "nombre");
+
+    // Calcular tiempo desde última conexión
+    const usersWithStatus = users.map((user) => ({
+      ...user.toObject(),
+      tiempoDesdeUltimaConexion: user.ultimaConexion
+        ? Math.floor((new Date() - user.ultimaConexion) / 1000 / 60)
+        : null, // en minutos
+    }));
 
     res.json({
       ok: true,
-      users,
+      users: usersWithStatus,
     });
   } catch (error) {
     console.error("Error al obtener usuarios:", error);
     res.status(500).json({
       ok: false,
       message: "Error al obtener la lista de usuarios",
+      error: error.message,
+    });
+  }
+};
+
+// Actualizar estado de conexión
+const updateUserStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        ok: false,
+        message: "Usuario no encontrado",
+      });
+    }
+
+    user.enLinea = status;
+    user.ultimaConexion = new Date();
+    await user.save();
+
+    res.json({
+      ok: true,
+      message: `Usuario ${status ? "conectado" : "desconectado"} correctamente`,
+    });
+  } catch (error) {
+    console.error("Error al actualizar estado:", error);
+    res.status(500).json({
+      ok: false,
+      message: "Error al actualizar estado del usuario",
     });
   }
 };
@@ -596,9 +554,9 @@ export {
   login,
   getProfile,
   registerWithGoogle,
-  initializeAccounts,
   getUserPermissions,
   updateUserPermissions,
   getAllUsersPermissions,
   loginWithGoogle,
+  updateUserStatus,
 };

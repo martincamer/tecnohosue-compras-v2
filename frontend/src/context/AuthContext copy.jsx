@@ -96,12 +96,9 @@ export const AuthProvider = ({ children }) => {
           user: {
             _id: userData._id,
             username: userData.username,
-            nombre: userData.nombre,
-            apellido: userData.apellido,
             email: userData.email,
             permisos: userData.permisos,
             rol: userData.rol,
-            sucursal: userData.sucursal,
           },
         };
 
@@ -132,16 +129,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  useEffect(() => {
-    console.log("Estado auth actualizado:", auth);
-  }, [auth]);
-
   const logout = () => {
     setAuth({});
     localStorage.removeItem("token");
     localStorage.removeItem("auth");
     delete clienteAxios.defaults.headers.common["Authorization"];
   };
+
+  useEffect(() => {
+    console.log("Estado auth actualizado:", auth);
+  }, [auth]);
 
   const isAuthenticated = () => {
     const token = localStorage.getItem("token");

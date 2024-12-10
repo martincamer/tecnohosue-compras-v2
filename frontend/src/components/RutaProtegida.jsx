@@ -26,7 +26,7 @@ const RutaProtegida = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar isOpen={sidebarOpen} />
+      <Sidebar isOpen={sidebarOpen} setIsSubmenuOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col h-screen">
         <Navbar toggleSidebar={toggleSidebar} />
         <main className="flex-1 overflow-auto p-4">

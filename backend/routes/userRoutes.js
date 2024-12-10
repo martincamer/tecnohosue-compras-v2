@@ -8,6 +8,7 @@ import {
   getUserPermissions,
   updateUserPermissions,
   loginWithGoogle,
+  updateUserStatus,
 } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -21,5 +22,6 @@ router.post("/login-google", loginWithGoogle);
 router.get("/permissions", protect, getAllUsersPermissions);
 router.get("/permissions/:userId", protect, getUserPermissions);
 router.put("/permissions/:userId", protect, updateUserPermissions);
+router.put("/status", protect, updateUserStatus);
 
 export default router;

@@ -6,8 +6,6 @@ import {
   LayoutDashboard,
   Package,
   ShoppingCart,
-  Store,
-  ArrowRightLeft,
   BarChart3,
   Settings,
   LogOut,
@@ -95,7 +93,7 @@ const SubMenuItem = ({ to, children }) => {
   );
 };
 
-const Sidebar = ({ isOpen }) => {
+const Sidebar = ({ isOpen, setIsSubmenuOpen }) => {
   const { logout } = useAuth();
   const location = useLocation();
 
@@ -132,7 +130,9 @@ const Sidebar = ({ isOpen }) => {
             isOpen={isOpen}
             active={location.pathname === "/dashboard"}
           >
-            <SubMenuItem to="/dashboard">Inicio</SubMenuItem>
+            <SubMenuItem to="/dashboard">
+              <p onClick={() => setIsSubmenuOpen(!isOpen)}>Inicio</p>
+            </SubMenuItem>
           </MenuItem>
 
           <MenuItem
@@ -141,7 +141,9 @@ const Sidebar = ({ isOpen }) => {
             isOpen={isOpen}
             active={location.pathname.includes("/inventario")}
           >
-            <SubMenuItem to="/inventario/productos">Productos</SubMenuItem>
+            <SubMenuItem to="/inventario/productos">
+              <p onClick={() => setIsSubmenuOpen(!isOpen)}>Productos</p>
+            </SubMenuItem>
           </MenuItem>
 
           <MenuItem
@@ -150,20 +152,12 @@ const Sidebar = ({ isOpen }) => {
             isOpen={isOpen}
             active={location.pathname.includes("/compras")}
           >
-            <SubMenuItem to="/compras/proveedores">Proveedores</SubMenuItem>
+            <SubMenuItem to="/compras/proveedores">
+              <p onClick={() => setIsSubmenuOpen(!isOpen)}>Proveedores</p>
+            </SubMenuItem>
           </MenuItem>
 
-          <MenuItem
-            icon={Store}
-            label="Ventas"
-            isOpen={isOpen}
-            active={location.pathname.includes("/ventas")}
-          >
-            <SubMenuItem to="/ventas/clientes">Clientes</SubMenuItem>
-            <SubMenuItem to="/ventas/casas">Casas</SubMenuItem>
-          </MenuItem>
-
-          <MenuItem
+          {/* <MenuItem
             icon={ArrowRightLeft}
             label="Transacciones"
             isOpen={isOpen}
@@ -174,7 +168,7 @@ const Sidebar = ({ isOpen }) => {
             <SubMenuItem to="/transacciones/all-cajas">
               Todas las cajas
             </SubMenuItem>
-          </MenuItem>
+          </MenuItem> */}
 
           <MenuItem
             icon={BarChart3}
@@ -182,8 +176,12 @@ const Sidebar = ({ isOpen }) => {
             isOpen={isOpen}
             active={location.pathname.includes("/reportes")}
           >
-            <SubMenuItem to="/reportes/ventas">Ventas</SubMenuItem>
-            <SubMenuItem to="/reportes/inventario">Inventario</SubMenuItem>
+            <SubMenuItem to="/reportes/compras">
+              <p onClick={() => setIsSubmenuOpen(!isOpen)}>Compras</p>
+            </SubMenuItem>
+            <SubMenuItem to="/reportes/inventario">
+              <p onClick={() => setIsSubmenuOpen(!isOpen)}>Inventario</p>
+            </SubMenuItem>
           </MenuItem>
         </div>
 

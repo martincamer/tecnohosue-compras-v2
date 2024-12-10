@@ -29,41 +29,41 @@ export const AuthProvider = ({ children }) => {
     return {};
   });
 
+  const [loading, setLoading] = useState(true);
+
+  const verificarAuth = async () => {
+    const token = localStorage.getItem("token");
+    const savedAuth = localStorage.getItem("auth");
+
+    if (!token || !savedAuth) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      clienteAxios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const response = await clienteAxios.get("/users/profile");
+
+      const userData = response.data;
+      const authData = {
+        token,
+        user: userData,
+      };
+
+      setAuth(authData);
+      localStorage.setItem("auth", JSON.stringify(authData));
+    } catch (error) {
+      console.error("Error de verificación:", error);
+      setAuth({});
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth");
+      delete clienteAxios.defaults.headers.common["Authorization"];
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const verificarAuth = async () => {
-      const token = localStorage.getItem("token");
-      const savedAuth = localStorage.getItem("auth");
-
-      if (!token || !savedAuth) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        clienteAxios.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${token}`;
-        const response = await clienteAxios.get("/users/profile");
-
-        const userData = response.data;
-        const authData = {
-          token,
-          user: userData,
-        };
-
-        setAuth(authData);
-        localStorage.setItem("auth", JSON.stringify(authData));
-      } catch (error) {
-        console.error("Error de verificación:", error);
-        setAuth({});
-        localStorage.removeItem("token");
-        localStorage.removeItem("auth");
-        delete clienteAxios.defaults.headers.common["Authorization"];
-      } finally {
-        setLoading(false);
-      }
-    };
-
     verificarAuth();
   }, []);
 
@@ -99,6 +99,9 @@ export const AuthProvider = ({ children }) => {
             email: userData.email,
             permisos: userData.permisos,
             rol: userData.rol,
+            nombre: userData.nombre,
+            apellido: userData.apellido,
+            fabrica: userData.fabrica,
           },
         };
 
@@ -108,6 +111,8 @@ export const AuthProvider = ({ children }) => {
         clienteAxios.defaults.headers.common[
           "Authorization"
         ] = `Bearer ${userData.token}`;
+
+        await verificarAuth();
 
         return { success: true };
       }
@@ -129,16 +134,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    setAuth({});
-    localStorage.removeItem("token");
-    localStorage.removeItem("auth");
-    delete clienteAxios.defaults.headers.common["Authorization"];
-  };
-
   useEffect(() => {
     console.log("Estado auth actualizado:", auth);
   }, [auth]);
+
+  const logout = async () => {
+    try {
+      // Actualizar estado a desconectado antes de cerrar sesión
+      await clienteAxios.put("/users/status", { status: false });
+    } catch (error) {
+      console.error("Error al actualizar estado:", error);
+    } finally {
+      // Continuar con el logout normal
+      setAuth({});
+      localStorage.removeItem("token");
+      localStorage.removeItem("auth");
+      delete clienteAxios.defaults.headers.common["Authorization"];
+    }
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = async () => {
+      if (auth?._id) {
+        try {
+          await clienteAxios.put("/users/status", { status: false });
+        } catch (error) {
+          console.error("Error al actualizar estado:", error);
+        }
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [auth?._id]);
 
   const isAuthenticated = () => {
     const token = localStorage.getItem("token");
@@ -151,8 +182,6 @@ export const AuthProvider = ({ children }) => {
       return false;
     }
   };
-
-  const [loading, setLoading] = useState(true);
 
   return (
     <AuthContext.Provider

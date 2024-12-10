@@ -1,25 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { useCajaBanco } from "../context/CajaBancoContext";
-import { useClientes } from "../context/ClientesContext";
-import { useCompras } from "../context/ComprasContext";
-import { Line, Bar, Doughnut } from "react-chartjs-2";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
 import styled from "styled-components";
 import {
   DollarSign,
-  ShoppingCart,
   CreditCard,
   ArrowUp,
   ArrowDown,
@@ -29,37 +12,25 @@ import {
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import es from "date-fns/locale/es";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  startOfYear,
-  endOfYear,
-} from "date-fns";
-import { Calendar, ChevronDown } from "lucide-react";
+import { format } from "date-fns";
 import { formatearDinero } from "../utils/formatearDinero";
-import getConfig from "../helpers/configHeader";
-import clienteAxios from "../config/axios";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
 
 registerLocale("es", es);
 
-// Registrar componentes de Chart.js
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Title,
-  Tooltip,
-  Legend
-);
-
 const Dashboard = () => {
-  const { auth } = useAuth();
+  const { auth, loading } = useAuth();
+
+  if (loading) {
+    return <div>Cargando...</div>; // Muestra un spinner o mensaje de carga
+  }
+
+  if (!auth.user) {
+    return <div>No estás autenticado</div>; // Maneja el caso de no autenticación
+  }
+
+  console.log("user", auth);
 
   return (
     <DashboardContainer>
@@ -99,68 +70,7 @@ const Dashboard = () => {
                 })}
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              {/* <div className="flex gap-2">
-                {[
-                  { type: "month", label: "Mes Actual" },
-                  { type: "year", label: "Año Actual" },
-                  { type: "custom", label: "Personalizado" },
-                ].map(({ type, label }) => (
-                  <motion.button
-                    key={type}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleFilterChange(type)}
-                    className={`
-                      px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200
-                      ${
-                        filterType === type
-                          ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-100"
-                          : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
-                      }
-                    `}
-                  >
-                    {label}
-                  </motion.button>
-                ))}
-              </div> */}
-
-              {/* {filterType === "custom" && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="relative"
-                >
-                  <DatePicker
-                    selectsRange
-                    startDate={dateRange.startDate}
-                    endDate={dateRange.endDate}
-                    onChange={(update) => {
-                      setDateRange({
-                        startDate: update[0],
-                        endDate: update[1] || update[0],
-                      });
-                    }}
-                    locale="es"
-                    dateFormat="dd/MM/yyyy"
-                    customInput={
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="flex items-center gap-3 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all group"
-                      >
-                        <Calendar size={18} className="text-blue-500" />
-                        <span className="font-medium"></span>
-                        <ChevronDown
-                          size={18}
-                          className="text-gray-400 group-hover:text-blue-500 transition-colors"
-                        />
-                      </motion.button>
-                    }
-                  />
-                </motion.div>
-              )} */}
-            </div>
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4"></div>
           </motion.div>
         </div>
       </WelcomeSection>
@@ -265,145 +175,6 @@ const Dashboard = () => {
           </motion.div>
         ))}
       </div>
-
-      {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Ventas vs Compras
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-              <span className="text-sm text-gray-600">Ventas</span>
-              <span className="w-3 h-3 rounded-full bg-red-500 ml-2"></span>
-              <span className="text-sm text-gray-600">Compras</span>
-            </div>
-          </div>
-          <Line
-            data={ventasChartData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  display: false,
-                },
-                tooltip: {
-                  backgroundColor: "rgba(17, 24, 39, 0.8)",
-                  padding: 12,
-                  bodyFont: {
-                    size: 13,
-                  },
-                  callbacks: {
-                    label: function (context) {
-                      return `${context.dataset.label}: ${formatearDinero(
-                        context.raw
-                      )}`;
-                    },
-                  },
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  grid: {
-                    color: "rgba(156, 163, 175, 0.1)",
-                  },
-                  ticks: {
-                    font: {
-                      size: 12,
-                    },
-                    callback: function (value) {
-                      return formatearDinero(value);
-                    },
-                  },
-                },
-                x: {
-                  grid: {
-                    display: false,
-                  },
-                  ticks: {
-                    font: {
-                      size: 12,
-                    },
-                  },
-                },
-              },
-            }}
-          />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
-        >
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Distribución de Ingresos
-            </h3>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
-                <span className="text-sm text-gray-600">Ventas</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                <span className="text-sm text-gray-600">Otros</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-center">
-            <div className="w-[80%]">
-              <Doughnut
-                data={{
-                  labels: ["Ventas", "Otros Ingresos"],
-                  datasets: [
-                    {
-                      data: [
-                        estadisticas.ventas.total,
-                        estadisticas.ventas.total * 0.1,
-                      ],
-                      backgroundColor: ["#3b82f6", "#10b981"],
-                      borderWidth: 0,
-                      hoverOffset: 4,
-                    },
-                  ],
-                }}
-                options={{
-                  cutout: "70%",
-                  plugins: {
-                    legend: {
-                      display: false,
-                    },
-                    tooltip: {
-                      backgroundColor: "rgba(17, 24, 39, 0.8)",
-                      padding: 12,
-                      bodyFont: {
-                        size: 13,
-                      },
-                      callbacks: {
-                        label: function (context) {
-                          const label = context.label || "";
-                          const value = formatearDinero(context.raw);
-                          const percentage = Math.round(
-                            (context.raw / estadisticas.ventas.total) * 100
-                          );
-                          return `${label}: ${value} (${percentage}%)`;
-                        },
-                      },
-                    },
-                  },
-                }}
-              />
-            </div>
-          </div>
-        </motion.div>
-      </div> */}
     </DashboardContainer>
   );
 };

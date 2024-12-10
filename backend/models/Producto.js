@@ -27,6 +27,11 @@ const productoSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    fabrica: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Fabrica",
+      required: true,
+    },
     unidadMedida: {
       type: String,
       required: [true, "La unidad de medida es obligatoria"],

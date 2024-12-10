@@ -1,39 +1,50 @@
-import { Fragment, useState } from "react";
+import { Fragment, useEffect } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { useForm } from "react-hook-form";
 import { useProductos } from "../../context/ProductosContext";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { useCategorias } from "../../context/CategoriasContext";
-import { PlusCircle } from "lucide-react";
-import ModalCategoria from "../categorias/ModalCategoria";
 
-export default function ModalProducto({ isOpen, onClose }) {
-  const [showModalCategoria, setShowModalCategoria] = useState(false);
-  const { createProducto, UNIDADES_MEDIDA } = useProductos();
+export default function ModalEditarProducto({ isOpen, onClose, productoId }) {
+  const { updateProducto, UNIDADES_MEDIDA, getProducto } = useProductos();
   const { categorias } = useCategorias();
 
+  console.log(productoId);
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm({
-    defaultValues: {
-      nombre: "",
-      descripcion: "",
-      precio: "",
-      unidadMedida: "",
-      categoria: "",
-    },
-  });
+    setValue,
+  } = useForm();
+
+  // Obtener producto cuando se abre el modal
+  useEffect(() => {
+    const cargarProducto = async () => {
+      if (isOpen && productoId) {
+        const productoData = await getProducto(productoId);
+        if (productoData) {
+          setValue("nombre", productoData.nombre);
+          setValue("descripcion", productoData.descripcion);
+          setValue("precio", productoData.precio);
+          setValue("unidadMedida", productoData.unidadMedida);
+          setValue("categoria", productoData.categoria);
+        }
+      }
+    };
+
+    cargarProducto();
+  }, [isOpen, productoId]);
 
   const onSubmit = async (data) => {
     try {
-      await createProducto(data);
-      reset();
-      onClose();
+      const resultado = await updateProducto(productoId, data);
+      if (resultado.success) {
+        reset();
+        onClose();
+      }
     } catch (error) {
-      console.error("Error al crear producto:", error);
+      console.error("Error al actualizar producto:", error);
     }
   };
 
@@ -81,7 +92,7 @@ export default function ModalProducto({ isOpen, onClose }) {
                       as="h3"
                       className="text-xl font-semibold leading-6 text-gray-900 mb-8"
                     >
-                      Crear Nuevo Producto
+                      Editar Producto
                     </Dialog.Title>
 
                     <form
@@ -105,7 +116,6 @@ export default function ModalProducto({ isOpen, onClose }) {
                               },
                             })}
                             className="block w-full rounded-xl border focus:border-[2px] border-gray-200 px-4 py-3 outline-none focus:border-blue-500 transition-all duration-200 text-gray-700 text-sm"
-                            placeholder="Ingrese el nombre del producto"
                           />
                           {errors.nombre && (
                             <p className="mt-2 text-sm text-red-600">
@@ -125,7 +135,6 @@ export default function ModalProducto({ isOpen, onClose }) {
                             })}
                             rows={3}
                             className="block w-full rounded-xl border focus:border-[2px] border-gray-200 px-4 py-3 outline-none focus:border-blue-500 transition-all duration-200 text-gray-700 text-sm"
-                            placeholder="Ingrese la descripción del producto"
                           />
                           {errors.descripcion && (
                             <p className="mt-2 text-sm text-red-600">
@@ -156,7 +165,6 @@ export default function ModalProducto({ isOpen, onClose }) {
                                 },
                               })}
                               className="block w-full rounded-xl border focus:border-[2px] border-gray-200 px-7 py-3 outline-none focus:border-blue-500 transition-all duration-200 text-gray-700 text-sm"
-                              placeholder="0.00"
                             />
                           </div>
                           {errors.precio && (
@@ -193,19 +201,9 @@ export default function ModalProducto({ isOpen, onClose }) {
 
                         {/* Categoría */}
                         <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <label className="block text-sm font-medium leading-6 text-gray-900">
-                              Categoría
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => setShowModalCategoria(true)}
-                              className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
-                            >
-                              <PlusCircle className="w-4 h-4" />
-                              Nueva Categoría
-                            </button>
-                          </div>
+                          <label className="block text-sm font-medium leading-6 text-gray-900 mb-2">
+                            Categoría
+                          </label>
                           <select
                             {...register("categoria", {
                               required: "La categoría es requerida",
@@ -239,15 +237,11 @@ export default function ModalProducto({ isOpen, onClose }) {
                           type="submit"
                           className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-all duration-200"
                         >
-                          Crear Producto
+                          Actualizar Producto
                         </button>
                       </div>
                     </form>
                   </div>
-                  <ModalCategoria
-                    isOpen={showModalCategoria}
-                    onClose={() => setShowModalCategoria(false)}
-                  />
                 </div>
               </Dialog.Panel>
             </Transition.Child>
